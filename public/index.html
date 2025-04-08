@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MatchMyVibe - Music Dating App</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <div class="app-container">
+      <div id="login-container">
+        <h1>MatchMyVibe</h1>
+        <h2>Find your match through music</h2>
+        <button id="login-button" class="spotify-button">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Spotify_logo_without_text.svg/168px-Spotify_logo_without_text.svg.png" alt="Spotify logo" class="spotify-logo">
+          Sign in with Spotify
+        </button>
+      </div>
+
+      <div id="dashboard-container" style="display: none;">
+        <h1>Welcome to MatchMyVibe</h1>
+        <div id="user-profile">
+          <img id="user-avatar" src="" alt="User avatar" class="avatar">
+          <h2 id="user-name"></h2>
+        </div>
+
+        <div class="spotify-data-container">
+          <div class="top-artists-container">
+            <h3>Your Top 5 Artists This Month</h3>
+            <ul id="top-artists-list" class="item-list"></ul>
+          </div>
+          
+          <div class="top-tracks-container">
+            <h3>Your Top 5 Tracks This Month</h3>
+            <ul id="top-tracks-list" class="item-list"></ul>
+          </div>
+        </div>
+
+        <button id="logout-button" class="logout-button">Sign Out</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script>
+    // Initialize Supabase client
+    const supabaseUrl = 'https://cnfndvvvbicpmwnbhkot.supabase.co';
+    const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNuZm5kdnZ2YmljcG13bmJoa290Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQxNDY0NjksImV4cCI6MjA1OTcyMjQ2OX0.JLwHnYgWcaQrvCQbBHzqBK4pQ2UtdD_7RKE4usfAprQ';
+    const supabase = supabase.createClient(supabaseUrl, supabaseAnonKey);
+
+    // DOM elements
+    const loginContainer = document.getElementById('login-container');
+    const dashboardContainer = document.getElementById('dashboard-container');
+    const loginButton = document.getElementById('login-button');
+    const logoutButton = document.getElementById('logout-button');
+    const userAvatar = document.getElementById('user-avatar');
+    const userName = document.getElementById('user-name');
+    const topArtistsList = document.getElementById('top-artists-list');
+    const topTracksList = document.getElementById('top-tracks-list');
+
+    // Check if user is already logged in
+    async function checkSession() {
+      const { data, error } = await supabase.auth.getSession();
+      
+      if (data.session) {
+        showDashboard(data.session);
+      } else {
+        showLogin();
+      }
+    }
+
+    // Sign in with Spotify
+    loginButton.addEventListener('click', async () => {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'spotify',
+        options: {
+          scopes: 'user-read-email user-top-read',
+          redirectTo: `${window.location.origin}/callback`
+        }
+      });
+      
+      if (error) {
+        console.error('Error signing in:', error);
+        alert('Failed to sign in with Spotify. Please try again.');
+      }
+    });
+
+    // Handle Spotify callback
+    async function handleCallback() {
+      if (window.location.hash || window.location.search) {
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error getting session:', error);
+          showLogin();
+          return;
+        }
+        
+        if (data.session) {
+          // Save profile data to database
+          await saveUserProfile(data.session);
+          
+          // Fetch and save top artists and tracks
+          await fetchAndSaveSpotifyData(data.session);
+          
+          showDashboard(data.session);
+          
+          // Clear URL parameters
+          window.history.replaceState(null, null, window.location.pathname);
+        } else {
+          showLogin();
+        }
+      }
+    }
+
+    // Save user profile to database
+    async function saveUserProfile(session) {
+      const { provider_token, user } = session;
+      
+      // Get Spotify profile data
+      const spotifyResponse = await fetch('https://api.spotify.com/v1/me', {
+        headers: {
+          'Authorization': `Bearer ${provider_token}`
+        }
+      });
+      
+      if (!spotifyResponse.ok) {
+        console.error('Error fetching Spotify profile');
+        return;
+      }
+      
+      const spotifyData = await spotifyResponse.json();
+      
+      // Save profile to our database
+      const { error } = await supabase
+        .from('profiles')
+        .upsert({
+          id: user.id,
+          spotify_id: spotifyData.id,
+          display_name: spotifyData.display_name,
+          avatar_url: spotifyData.images?.[0]?.url || null,
+          updated_at: new Date()
+        });
+      
+      if (error) {
+        console.error('Error saving profile:', error);
+      }
+    }
+
+    // Fetch and save top artists and tracks
+    async function fetchAndSaveSpotifyData(session) {
+      const { provider_token, user } = session;
+      
+      // Fetch top artists
+      const artistsResponse = await fetch('https://api.spotify.com/v1/me/top/artists?time_range=short_term&limit=5', {
+        headers: {
+          'Authorization': `Bearer ${provider_token}`
+        }
+      });
+      
+      if (artistsResponse.ok) {
+        const artistsData = await artistsResponse.json();
+        
+        // Save each artist to database
+        for (const artist of artistsData.items) {
+          await supabase
+            .from('top_artists')
+            .upsert({
+              profile_id: user.id,
+              artist_id: artist.id,
+              artist_name: artist.name,
+              popularity: artist.popularity,
+              genres: artist.genres,
+              image_url: artist.images?.[0]?.url || null,
+              time_range: 'short_term',
+              timestamp: new Date()
+            });
+        }
+      }
+      
+      // Fetch top tracks
+      const tracksResponse = await fetch('https://api.spotify.com/v1/me/top/tracks?time_range=short_term&limit=5', {
+        headers: {
+          'Authorization': `Bearer ${provider_token}`
+        }
+      });
+      
+      if (tracksResponse.ok) {
+        const tracksData = await tracksResponse.json();
+        
+        // Save each track to database
+        for (const track of tracksData.items) {
+          await supabase
+            .from('top_tracks')
+            .upsert({
+              profile_id: user.id,
+              track_id: track.id,
+              track_name: track.name,
+              artist_name: track.artists[0].name,
+              album_name: track.album.name,
+              popularity: track.popularity,
+              image_url: track.album.images?.[0]?.url || null,
+              time_range: 'short_term',
+              timestamp: new Date()
+            });
+        }
+      }
+    }
+
+    // Display Spotify data
+    async function displaySpotifyData(session) {
+      // Clear previous lists
+      topArtistsList.innerHTML = '';
+      topTracksList.innerHTML = '';
+      
+      // Fetch data from our backend
+      const response = await fetch('/api/spotify-data', {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
+      
+      if (!response.ok) {
+        console.error('Error fetching Spotify data from API');
+        return;
+      }
+      
+      const { topArtists, topTracks } = await response.json();
+      
+      // Display top artists
+      if (topArtists && topArtists.length > 0) {
+        topArtists.forEach(artist => {
+          const li = document.createElement('li');
+          li.classList.add('item');
+          
+          li.innerHTML = `
+            <div class="item-image">
+              <img src="${artist.image_url || 'https://via.placeholder.com/50'}" alt="${artist.artist_name}">
+            </div>
+            <div class="item-info">
+              <span class="item-name">${artist.artist_name}</span>
+              <span class="item-meta">${artist.genres?.[0] || 'Genre not available'}</span>
+            </div>
+          `;
+          
+          topArtistsList.appendChild(li);
+        });
+      } else {
+        topArtistsList.innerHTML = '<li class="no-data">No top artists data available</li>';
+      }
+      
+      // Display top tracks
+      if (topTracks && topTracks.length > 0) {
+        topTracks.forEach(track => {
+          const li = document.createElement('li');
+          li.classList.add('item');
+          
+          li.innerHTML = `
+            <div class="item-image">
+              <img src="${track.image_url || 'https://via.placeholder.com/50'}" alt="${track.track_name}">
+            </div>
+            <div class="item-info">
+              <span class="item-name">${track.track_name}</span>
+              <span class="item-meta">by ${track.artist_name}</span>
+            </div>
+          `;
+          
+          topTracksList.appendChild(li);
+        });
+      } else {
+        topTracksList.innerHTML = '<li class="no-data">No top tracks data available</li>';
+      }
+    }
+
+    // Show dashboard and user data
+    async function showDashboard(session) {
+      loginContainer.style.display = 'none';
+      dashboardContainer.style.display = 'block';
+      
+      // Get user profile
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', session.user.id)
+        .single();
+      
+      if (data) {
+        userName.textContent = data.display_name || 'Music Lover';
+        if (data.avatar_url) {
+          userAvatar.src = data.avatar_url;
+        } else {
+          userAvatar.src = 'https://via.placeholder.com/100';
+        }
+      }
+      
+      // Display Spotify data
+      await displaySpotifyData(session);
+    }
+
+    // Show login screen
+    function showLogin() {
+      loginContainer.style.display = 'block';
+      dashboardContainer.style.display = 'none';
+    }
+
+    // Sign out
+    logoutButton.addEventListener('click', async () => {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Error signing out:', error);
+      } else {
+        showLogin();
+      }
+    });
+
+    // Initialize
+    window.onload = async () => {
+      // Check for callback
+      if (window.location.pathname === '/callback') {
+        await handleCallback();
+      } else {
+        await checkSession();
+      }
+    };
+  </script>
+</body>
+</html> 
