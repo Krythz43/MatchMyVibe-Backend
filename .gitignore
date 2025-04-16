@@ -1,0 +1,86 @@
+# Go specific ignores
+/bin/
+/pkg/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go.work
+
+# Go dependency directories
+vendor/
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment and configuration
+.env
+*.env
+*.env.*
+!.env.example
+
+# Logs
+*.log
+/logs/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+*.db-shm
+*.db-wal
+*.dump
+
+# Build and binary output
+/build/
+/dist/
+/release/
+/out/
+*.exe
+matchmyvibe-backend
+
+# Temporary files
+/tmp/
+/temp/
+
+# Generated files
+/generated/
+
+# Dependency directories
+node_modules/
+
+# Spotify client secrets and tokens
+spotify_appkey.key
+*spotify*token*
+*_token.json
+
+# Debug files
+debug
+__debug_bin
+
+# If using Air for hot reloading
+.air.toml
+/tmp/
+
+# Coverage files
+coverage.txt
+coverage.html
+/coverage/
+
+# Postman export files (except the ones we specifically want to track)
+/postman/*
+!/postman/matchmyvibe_api_collection.json
+!/postman/environment.json
+!/postman/README.md
+!/postman/tests/
+
+# System files
+Thumbs.db 

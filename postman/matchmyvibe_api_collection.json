@@ -1,0 +1,323 @@
+{
+  "info": {
+    "_postman_id": "a9f28ce8-f7b5-4bd7-a26e-8ac8c5a82e70",
+    "name": "MatchMyVibe API",
+    "description": "A collection for testing the MatchMyVibe backend API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "description": "Authentication-related endpoints",
+      "item": [
+        {
+          "name": "Spotify Auth",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"spotify_uri\": \"spotify:user:1234567890\",\n    \"access_token\": \"spotify_access_token_example\",\n    \"refresh_token\": \"spotify_refresh_token_example\",\n    \"expiry_date\": \"{{$isoTimestamp}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/spotify",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "spotify"
+              ]
+            },
+            "description": "Authenticate with Spotify credentials"
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/refresh",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "refresh"
+              ]
+            },
+            "description": "Refresh JWT token"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "User Profile",
+      "description": "Profile management endpoints",
+      "item": [
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/profile",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "profile"
+              ]
+            },
+            "description": "Get the user's full profile"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"John Doe\",\n    \"university_name\": \"Stanford University\",\n    \"work\": {\n        \"company\": \"Tech Corp\",\n        \"role\": \"Software Engineer\"\n    },\n    \"home_town\": \"San Francisco\",\n    \"height\": \"6'0\\\"\",\n    \"zodiac\": \"Virgo\",\n    \"interests\": [\"music\", \"hiking\", \"photography\"],\n    \"interest_rating\": {\n        \"music\": 5,\n        \"hiking\": 4,\n        \"photography\": 3\n    },\n    \"prompts\": [\n        {\n            \"question\": \"What's your favorite song?\",\n            \"answer\": \"Bohemian Rhapsody by Queen\"\n        },\n        {\n            \"question\": \"Concert you'd love to attend?\",\n            \"answer\": \"Coldplay World Tour\"\n        }\n    ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/profile",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "profile"
+              ]
+            },
+            "description": "Update user profile details"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Currently Playing",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/profile/currently-playing",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "profile",
+                "currently-playing"
+              ]
+            },
+            "description": "Update the user's currently playing track from Spotify"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Advanced Profile Updates",
+      "description": "Testing partial updates and edge cases",
+      "item": [
+        {
+          "name": "Update Only Name",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Jane Smith\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/profile",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "profile"
+              ]
+            },
+            "description": "Update only the user's name"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Work Info",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"work\": {\n        \"company\": \"New Company\",\n        \"role\": \"Senior Engineer\"\n    }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/profile",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "profile"
+              ]
+            },
+            "description": "Update only work information"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Interests",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"interests\": [\"music\", \"cooking\", \"travel\", \"reading\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/profile",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "profile"
+              ]
+            },
+            "description": "Update only interests"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Prompts",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"prompts\": [\n        {\n            \"question\": \"Your go-to karaoke song?\",\n            \"answer\": \"Sweet Caroline\"\n        },\n        {\n            \"question\": \"Favorite music venue?\",\n            \"answer\": \"Red Rocks Amphitheatre\"\n        },\n        {\n            \"question\": \"Music that defines you?\",\n            \"answer\": \"90s alternative rock\"\n        }\n    ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/profile",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "profile"
+              ]
+            },
+            "description": "Update only prompts"
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "type": "string",
+      "description": "Base URL for the API"
+    },
+    {
+      "key": "auth_token",
+      "value": "",
+      "type": "string",
+      "description": "JWT token for authentication"
+    }
+  ]
+} 
