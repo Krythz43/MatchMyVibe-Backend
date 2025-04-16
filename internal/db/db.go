@@ -75,6 +75,9 @@ func (db *DB) GetUserBySpotifyURI(spotifyURI string) (*models.User, error) {
 			 currently_playing, created_at, updated_at 
 			 FROM users WHERE spotify_uri = $1`
 
+	fmt.Println("[DEBUG] Query:", query)
+	fmt.Println("[DEBUG] Spotify URI:", spotifyURI)
+
 	err := db.QueryRow(query, spotifyURI).Scan(
 		&user.ID, &user.SpotifyURI, &user.AccessToken, &user.RefreshToken, &user.TokenExpiry,
 		&user.Name, &user.UniversityName, &workJSON, &user.HomeTown, &user.Height, &user.Age, &user.Zodiac,
@@ -82,6 +85,7 @@ func (db *DB) GetUserBySpotifyURI(spotifyURI string) (*models.User, error) {
 	)
 
 	if err != nil {
+		fmt.Println("[DEBUG] Error fetching user by Spotify URI:", err)
 		if err == sql.ErrNoRows {
 			return nil, nil // User not found
 		}

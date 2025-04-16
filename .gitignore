@@ -1,86 +1,50 @@
-# Go specific ignores
-/bin/
-/pkg/
+# Binaries for programs and plugins
 *.exe
 *.exe~
 *.dll
 *.so
 *.dylib
-*.test
-*.out
-go.work
+matchmyvibe-backend
 
-# Go dependency directories
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+# Dependency directories (remove the comment below to include it)
 vendor/
 
-# IDE and editor files
+# Go workspace file
+go.work
+
+# Environment variables
+.env
+
+# IDE specific files
 .idea/
 .vscode/
 *.swp
 *.swo
-*~
+
+# OS generated files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
 
-# Environment and configuration
-.env
-*.env
-*.env.*
-!.env.example
-
-# Logs
+# Log files
 *.log
-/logs/
 
-# Database
-*.db
-*.sqlite
-*.sqlite3
-*.db-shm
-*.db-wal
-*.dump
+# Built binaries
+bin/
+dist/
 
-# Build and binary output
-/build/
-/dist/
-/release/
-/out/
-*.exe
-matchmyvibe-backend
+# Air live reload
+tmp/
 
-# Temporary files
-/tmp/
-/temp/
-
-# Generated files
-/generated/
-
-# Dependency directories
-node_modules/
-
-# Spotify client secrets and tokens
-spotify_appkey.key
-*spotify*token*
-*_token.json
-
-# Debug files
-debug
-__debug_bin
-
-# If using Air for hot reloading
-.air.toml
-/tmp/
-
-# Coverage files
-coverage.txt
-coverage.html
-/coverage/
-
-# Postman export files (except the ones we specifically want to track)
-/postman/*
-!/postman/matchmyvibe_api_collection.json
-!/postman/environment.json
-!/postman/README.md
-!/postman/tests/
-
-# System files
-Thumbs.db 
+# Database files
+*.db 

@@ -1,0 +1,156 @@
+{
+  "info": {
+    "name": "MatchMyVibe API",
+    "description": "Collection for testing the MatchMyVibe backend API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "description": "Authentication endpoints",
+      "item": [
+        {
+          "name": "Spotify Auth",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"spotify_uri\": \"spotify:user:1234567890\",\n  \"access_token\": \"spotify_access_token\",\n  \"refresh_token\": \"spotify_refresh_token\",\n  \"expiry_date\": \"2023-04-16T12:00:00Z\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/spotify",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "spotify"]
+            },
+            "description": "Authenticate with Spotify credentials. Returns a JWT token for future API requests."
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/refresh",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "refresh"]
+            },
+            "description": "Refresh the JWT token using an existing valid token."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "User Profile",
+      "description": "User profile management endpoints",
+      "item": [
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/profile",
+              "host": ["{{base_url}}"],
+              "path": ["api", "profile"]
+            },
+            "description": "Get the current user's profile information."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Doe\",\n  \"university_name\": \"Stanford University\",\n  \"work\": {\n    \"company\": \"Tech Corp\",\n    \"role\": \"Software Engineer\"\n  },\n  \"home_town\": \"San Francisco\",\n  \"height\": \"6'0\\\"\",\n  \"zodiac\": \"Libra\",\n  \"interests\": [\"music\", \"hiking\", \"coding\"],\n  \"interest_rating\": {\n    \"music\": 5,\n    \"hiking\": 4,\n    \"coding\": 5\n  },\n  \"prompts\": [\n    {\n      \"question\": \"What's your favorite music genre?\",\n      \"answer\": \"Indie Rock\"\n    },\n    {\n      \"question\": \"A perfect day would be...\",\n      \"answer\": \"Listening to live music at a festival\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/profile",
+              "host": ["{{base_url}}"],
+              "path": ["api", "profile"]
+            },
+            "description": "Update the current user's profile information."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Currently Playing",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/profile/currently-playing",
+              "host": ["{{base_url}}"],
+              "path": ["api", "profile", "currently-playing"]
+            },
+            "description": "Update the user's currently playing track information from Spotify."
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "auth_token",
+      "value": "your_jwt_token_here",
+      "type": "string"
+    }
+  ]
+} 
