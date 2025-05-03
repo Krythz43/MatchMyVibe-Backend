@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -37,16 +38,19 @@ func (h *ProfileHandler) GetProfile(c *gin.Context) {
 
 // UpdateProfileRequest represents a request to update a user's profile
 type UpdateProfileRequest struct {
-	Name           *string             `json:"name"`
-	UniversityName *string             `json:"university_name"`
-	Work           *models.WorkProfile `json:"work"`
-	HomeTown       *string             `json:"home_town"`
-	Height         *string             `json:"height"`
-	Zodiac         *string             `json:"zodiac"`
-	Images         [][]byte            `json:"images"`
-	Interests      []string            `json:"interests"`
-	InterestRating map[string]int      `json:"interest_rating"`
-	Prompts        []struct {
+	Name             *string             `json:"name"`
+	UniversityName   *string             `json:"university_name"`
+	Work             *models.WorkProfile `json:"work"`
+	HomeTown         *string             `json:"home_town"`
+	Height           *string             `json:"height"`
+	Zodiac           *string             `json:"zodiac"`
+	BirthdayInUnix   *int64              `json:"birthdayInUnix"`
+	Gender           *string             `json:"gender"`
+	DatingPreference *string             `json:"dating_preference"`
+	Images           [][]byte            `json:"images"`
+	Interests        []string            `json:"interests"`
+	InterestRating   map[string]int      `json:"interest_rating"`
+	Prompts          []struct {
 		Question string `json:"question"`
 		Answer   string `json:"answer"`
 	} `json:"prompts"`
@@ -62,13 +66,19 @@ func (h *ProfileHandler) UpdateProfile(c *gin.Context) {
 
 	var req UpdateProfileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		fmt.Printf("[ERROR] UpdateProfile - Error binding JSON: %v\n", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
+	fmt.Printf("[DEBUG] UpdateProfile - Request: %+v\n", req)
+	fmt.Printf("[DEBUG] UpdateProfile - BirthdayInUnix: %v, Gender: %v, DatingPreference: %v\n",
+		req.BirthdayInUnix, req.Gender, req.DatingPreference)
+
 	// Get the current user to update
 	user, err := h.DB.GetUserByID(userID)
 	if err != nil {
+		fmt.Printf("[ERROR] UpdateProfile - Error retrieving user: %v\n", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error retrieving user"})
 		return
 	}
@@ -92,9 +102,37 @@ func (h *ProfileHandler) UpdateProfile(c *gin.Context) {
 	if req.Zodiac != nil {
 		user.Zodiac = req.Zodiac
 	}
+	if req.BirthdayInUnix != nil {
+		fmt.Printf("[DEBUG] UpdateProfile - Setting BirthdayInUnix to: %v\n", *req.BirthdayInUnix)
+		user.BirthdayInUnix = req.BirthdayInUnix
+	}
+	if req.Gender != nil {
+		// Validate gender
+		if *req.Gender != "Man" && *req.Gender != "Woman" && *req.Gender != "Non-binary" {
+			fmt.Printf("[ERROR] UpdateProfile - Invalid gender value: %v\n", *req.Gender)
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid gender value"})
+			return
+		}
+		fmt.Printf("[DEBUG] UpdateProfile - Setting Gender to: %v\n", *req.Gender)
+		user.Gender = req.Gender
+	}
+	if req.DatingPreference != nil {
+		// Validate dating preference
+		if *req.DatingPreference != "Man" && *req.DatingPreference != "Woman" && *req.DatingPreference != "Everyone" {
+			fmt.Printf("[ERROR] UpdateProfile - Invalid dating preference value: %v\n", *req.DatingPreference)
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid dating preference value"})
+			return
+		}
+		fmt.Printf("[DEBUG] UpdateProfile - Setting DatingPreference to: %v\n", *req.DatingPreference)
+		user.DatingPreference = req.DatingPreference
+	}
+
+	fmt.Printf("[DEBUG] UpdateProfile - Before DB update: BirthdayInUnix=%v, Gender=%v, DatingPreference=%v\n",
+		user.BirthdayInUnix, user.Gender, user.DatingPreference)
 
 	// Update the user in the database
 	if err := h.DB.UpdateUser(user); err != nil {
+		fmt.Printf("[ERROR] UpdateProfile - Error updating user: %v\n", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error updating user"})
 		return
 	}

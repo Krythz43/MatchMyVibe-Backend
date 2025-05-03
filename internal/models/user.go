@@ -21,6 +21,9 @@ type User struct {
 	Age              *string      `json:"age" db:"age"`
 	Zodiac           *string      `json:"zodiac" db:"zodiac"`
 	CurrentlyPlaying *string      `json:"currently_playing" db:"currently_playing"`
+	BirthdayInUnix   *int64       `json:"birthdayInUnix" db:"birthdayInUnix"`
+	Gender           *string      `json:"gender" db:"gender"`
+	DatingPreference *string      `json:"dating_preference" db:"dating_preference"`
 	CreatedAt        time.Time    `json:"created_at" db:"created_at"`
 	UpdatedAt        time.Time    `json:"updated_at" db:"updated_at"`
 }
@@ -107,4 +110,7 @@ type UserProfile struct {
 	TopSongs         []Song         `json:"top_songs"`
 	SavedPlaylists   []Playlist     `json:"saved_playlists"`
 	CurrentlyPlaying *string        `json:"currently_playing"`
+	BirthdayInUnix   *int64         `json:"birthdayInUnix"`
+	Gender           *string        `json:"gender"`
+	DatingPreference *string        `json:"dating_preference"`
 }

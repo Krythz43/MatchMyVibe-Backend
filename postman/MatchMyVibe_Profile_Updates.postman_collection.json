@@ -1,0 +1,121 @@
+{
+  "info": {
+    "name": "MatchMyVibe Profile Updates",
+    "description": "Tests for the new profile fields in MatchMyVibe backend API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Update Profile with New Fields",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"John Doe\",\n  \"birthdayInUnix\": 631152000,\n  \"gender\": \"Man\",\n  \"dating_preference\": \"Everyone\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/profile",
+          "host": ["{{base_url}}"],
+          "path": ["api", "profile"]
+        },
+        "description": "Update a user's profile with the new fields: birthdayInUnix (birthday), gender, and dating_preference."
+      },
+      "response": []
+    },
+    {
+      "name": "Update Profile - Invalid Gender",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"gender\": \"Invalid\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/profile",
+          "host": ["{{base_url}}"],
+          "path": ["api", "profile"]
+        },
+        "description": "Test validation by trying to update with an invalid gender value."
+      },
+      "response": []
+    },
+    {
+      "name": "Update Profile - Invalid Dating Preference",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"dating_preference\": \"Invalid\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/profile",
+          "host": ["{{base_url}}"],
+          "path": ["api", "profile"]
+        },
+        "description": "Test validation by trying to update with an invalid dating preference value."
+      },
+      "response": []
+    },
+    {
+      "name": "Get Profile",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/profile",
+          "host": ["{{base_url}}"],
+          "path": ["api", "profile"]
+        },
+        "description": "Get the user's profile to verify the new fields are included."
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "auth_token",
+      "value": "your_jwt_token_here",
+      "type": "string"
+    }
+  ]
+} 

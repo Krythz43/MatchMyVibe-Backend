@@ -9,6 +9,7 @@ MatchMyVibe is a music-based dating app that matches users based on their music 
 - User profile management
 - Storing and retrieving user's music preferences from Spotify
 - Real-time "currently playing" track updates
+- Dating profile with gender and preferences
 
 ## Tech Stack
 
@@ -112,14 +113,22 @@ MatchMyVibe is a music-based dating app that matches users based on their music 
     ```
     Authorization: Bearer <token>
     ```
-  - Response: Full user profile
+  - Response: Full user profile including dating preferences
 
 - `PUT /api/profile` - Update the user's profile
   - Headers:
     ```
     Authorization: Bearer <token>
     ```
-  - Request body: Any profile fields to update
+  - Request body: Any profile fields to update including the new fields
+    ```json
+    {
+      "name": "John Doe",
+      "birthdayInUnix": 631152000,
+      "gender": "Man",  // Can be "Man", "Woman", or "Non-binary"
+      "dating_preference": "Everyone"  // Can be "Man", "Woman", or "Everyone"
+    }
+    ```
   - Response: Updated full user profile
 
 - `PUT /api/profile/currently-playing` - Update the user's currently playing track
@@ -133,6 +142,13 @@ MatchMyVibe is a music-based dating app that matches users based on their music 
       "currently_playing": "Track Name - Artist Name"
     }
     ```
+
+## Recent Updates
+
+- Added new profile fields:
+  - `birthdayInUnix`: User's birthday as Unix timestamp
+  - `gender`: User's gender (Man, Woman, or Non-binary)
+  - `dating_preference`: User's dating preference (Man, Woman, or Everyone)
 
 ## License
 

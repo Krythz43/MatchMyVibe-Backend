@@ -37,13 +37,13 @@ func (db *DB) GetUserByID(userID uuid.UUID) (*models.User, error) {
 
 	query := `SELECT id, spotify_uri, access_token, refresh_token, token_expiry, 
 			 name, university_name, work, home_town, height, age, zodiac, 
-			 currently_playing, created_at, updated_at 
+			 currently_playing, "birthdayInUnix", gender, dating_preference, created_at, updated_at 
 			 FROM users WHERE id = $1`
 
 	err := db.QueryRow(query, userID).Scan(
 		&user.ID, &user.SpotifyURI, &user.AccessToken, &user.RefreshToken, &user.TokenExpiry,
 		&user.Name, &user.UniversityName, &workJSON, &user.HomeTown, &user.Height, &user.Age, &user.Zodiac,
-		&user.CurrentlyPlaying, &user.CreatedAt, &user.UpdatedAt,
+		&user.CurrentlyPlaying, &user.BirthdayInUnix, &user.Gender, &user.DatingPreference, &user.CreatedAt, &user.UpdatedAt,
 	)
 
 	if err != nil {
@@ -72,7 +72,7 @@ func (db *DB) GetUserBySpotifyURI(spotifyURI string) (*models.User, error) {
 
 	query := `SELECT id, spotify_uri, access_token, refresh_token, token_expiry, 
 			 name, university_name, work, home_town, height, age, zodiac, 
-			 currently_playing, created_at, updated_at 
+			 currently_playing, "birthdayInUnix", gender, dating_preference, created_at, updated_at 
 			 FROM users WHERE spotify_uri = $1`
 
 	fmt.Println("[DEBUG] Query:", query)
@@ -81,7 +81,7 @@ func (db *DB) GetUserBySpotifyURI(spotifyURI string) (*models.User, error) {
 	err := db.QueryRow(query, spotifyURI).Scan(
 		&user.ID, &user.SpotifyURI, &user.AccessToken, &user.RefreshToken, &user.TokenExpiry,
 		&user.Name, &user.UniversityName, &workJSON, &user.HomeTown, &user.Height, &user.Age, &user.Zodiac,
-		&user.CurrentlyPlaying, &user.CreatedAt, &user.UpdatedAt,
+		&user.CurrentlyPlaying, &user.BirthdayInUnix, &user.Gender, &user.DatingPreference, &user.CreatedAt, &user.UpdatedAt,
 	)
 
 	if err != nil {
@@ -128,21 +128,40 @@ func (db *DB) CreateUser(spotifyURI, accessToken, refreshToken string, tokenExpi
 
 // UpdateUser updates user profile information
 func (db *DB) UpdateUser(user *models.User) error {
+	fmt.Printf("[DEBUG] UpdateUser - Updating user %s with BirthdayInUnix=%v, Gender=%v, DatingPreference=%v\n",
+		user.ID, user.BirthdayInUnix, user.Gender, user.DatingPreference)
+
 	workJSON, err := json.Marshal(user.Work)
 	if err != nil {
+		fmt.Printf("[ERROR] UpdateUser - Error marshaling work JSON: %v\n", err)
 		return err
 	}
 
 	query := `UPDATE users SET 
 			 name = $1, university_name = $2, work = $3, home_town = $4, 
-			 height = $5, zodiac = $6, currently_playing = $7, updated_at = NOW() 
-			 WHERE id = $8`
+			 height = $5, zodiac = $6, currently_playing = $7, "birthdayInUnix" = $8,
+			 gender = $9, dating_preference = $10, updated_at = NOW() 
+			 WHERE id = $11`
 
-	_, err = db.Exec(query,
+	fmt.Printf("[DEBUG] UpdateUser - Executing query: %s\n", query)
+	fmt.Printf("[DEBUG] UpdateUser - Query params: name=%v, birthdayInUnix=%v, gender=%v, dating_preference=%v\n",
+		user.Name, user.BirthdayInUnix, user.Gender, user.DatingPreference)
+
+	result, err := db.Exec(query,
 		user.Name, user.UniversityName, workJSON, user.HomeTown,
-		user.Height, user.Zodiac, user.CurrentlyPlaying, user.ID,
+		user.Height, user.Zodiac, user.CurrentlyPlaying, user.BirthdayInUnix,
+		user.Gender, user.DatingPreference, user.ID,
 	)
-	return err
+
+	if err != nil {
+		fmt.Printf("[ERROR] UpdateUser - Error executing query: %v\n", err)
+		return err
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+	fmt.Printf("[DEBUG] UpdateUser - Rows affected: %d\n", rowsAffected)
+
+	return nil
 }
 
 // UpdateSpotifyTokens updates a user's Spotify access token, refresh token, and expiry
@@ -392,35 +411,38 @@ func (db *DB) GetUserPlaylists(userID uuid.UUID) ([]models.Playlist, error) {
 
 // GetFullUserProfile retrieves the complete user profile
 func (db *DB) GetFullUserProfile(userID uuid.UUID) (*models.UserProfile, error) {
-	// Get the base user info
-	query := `SELECT id, name, university_name, work, home_town, height, age, zodiac, currently_playing 
-			 FROM users WHERE id = $1`
+	fmt.Println("[DEBUG] GetFullUserProfile - Retrieving profile for user:", userID)
 
-	var userProfile models.UserProfile
-	var workJSON []byte
-
-	err := db.QueryRow(query, userID).Scan(
-		&userProfile.ID, &userProfile.Name, &userProfile.UniversityName, &workJSON,
-		&userProfile.HomeTown, &userProfile.Height, &userProfile.Age, &userProfile.Zodiac,
-		&userProfile.CurrentlyPlaying,
-	)
-
+	// First, get the user from GetUserByID to ensure we have all fields
+	user, err := db.GetUserByID(userID)
 	if err != nil {
-		return nil, fmt.Errorf("error fetching user: %v", err)
+		fmt.Printf("[ERROR] GetFullUserProfile - Error calling GetUserByID: %v\n", err)
+		return nil, fmt.Errorf("error fetching user from GetUserByID: %v", err)
 	}
 
-	// Parse work JSON if it exists
-	if len(workJSON) > 0 {
-		var work models.WorkProfile
-		if err := json.Unmarshal(workJSON, &work); err != nil {
-			return nil, fmt.Errorf("error parsing work JSON: %v", err)
-		}
-		userProfile.Work = &work
+	// Create a profile based on the user
+	userProfile := &models.UserProfile{
+		ID:               user.ID,
+		Name:             user.Name,
+		UniversityName:   user.UniversityName,
+		Work:             user.Work,
+		HomeTown:         user.HomeTown,
+		Height:           user.Height,
+		Age:              user.Age,
+		Zodiac:           user.Zodiac,
+		CurrentlyPlaying: user.CurrentlyPlaying,
+		BirthdayInUnix:   user.BirthdayInUnix,
+		Gender:           user.Gender,
+		DatingPreference: user.DatingPreference,
 	}
+
+	fmt.Printf("[DEBUG] UserProfile created with: BirthdayInUnix=%v, Gender=%v, DatingPreference=%v\n",
+		userProfile.BirthdayInUnix, userProfile.Gender, userProfile.DatingPreference)
 
 	// Get images
 	images, err := db.GetUserImages(userID)
 	if err != nil {
+		fmt.Printf("[ERROR] Error fetching images: %v\n", err)
 		return nil, fmt.Errorf("error fetching images: %v", err)
 	}
 	userProfile.Images = images
@@ -428,6 +450,7 @@ func (db *DB) GetFullUserProfile(userID uuid.UUID) (*models.UserProfile, error) 
 	// Get interests
 	interests, err := db.GetUserInterests(userID)
 	if err != nil {
+		fmt.Printf("[ERROR] Error fetching interests: %v\n", err)
 		return nil, fmt.Errorf("error fetching interests: %v", err)
 	}
 	userProfile.Interests = interests
@@ -435,6 +458,7 @@ func (db *DB) GetFullUserProfile(userID uuid.UUID) (*models.UserProfile, error) 
 	// Get interest ratings
 	interestRatings, err := db.GetUserInterestRatings(userID)
 	if err != nil {
+		fmt.Printf("[ERROR] Error fetching interest ratings: %v\n", err)
 		return nil, fmt.Errorf("error fetching interest ratings: %v", err)
 	}
 	userProfile.InterestRating = interestRatings
@@ -442,6 +466,7 @@ func (db *DB) GetFullUserProfile(userID uuid.UUID) (*models.UserProfile, error) 
 	// Get prompts
 	prompts, err := db.GetUserPrompts(userID)
 	if err != nil {
+		fmt.Printf("[ERROR] Error fetching prompts: %v\n", err)
 		return nil, fmt.Errorf("error fetching prompts: %v", err)
 	}
 	userProfile.Prompts = prompts
@@ -449,6 +474,7 @@ func (db *DB) GetFullUserProfile(userID uuid.UUID) (*models.UserProfile, error) 
 	// Get top artists
 	topArtists, err := db.GetUserArtists(userID)
 	if err != nil {
+		fmt.Printf("[ERROR] Error fetching top artists: %v\n", err)
 		return nil, fmt.Errorf("error fetching top artists: %v", err)
 	}
 	userProfile.TopArtists = topArtists
@@ -456,6 +482,7 @@ func (db *DB) GetFullUserProfile(userID uuid.UUID) (*models.UserProfile, error) 
 	// Get top songs
 	topSongs, err := db.GetUserSongs(userID)
 	if err != nil {
+		fmt.Printf("[ERROR] Error fetching top songs: %v\n", err)
 		return nil, fmt.Errorf("error fetching top songs: %v", err)
 	}
 	userProfile.TopSongs = topSongs
@@ -463,9 +490,13 @@ func (db *DB) GetFullUserProfile(userID uuid.UUID) (*models.UserProfile, error) 
 	// Get saved playlists
 	savedPlaylists, err := db.GetUserPlaylists(userID)
 	if err != nil {
+		fmt.Printf("[ERROR] Error fetching saved playlists: %v\n", err)
 		return nil, fmt.Errorf("error fetching saved playlists: %v", err)
 	}
 	userProfile.SavedPlaylists = savedPlaylists
 
-	return &userProfile, nil
+	fmt.Printf("[DEBUG] Final userProfile: BirthdayInUnix=%v, Gender=%v, DatingPreference=%v\n",
+		userProfile.BirthdayInUnix, userProfile.Gender, userProfile.DatingPreference)
+
+	return userProfile, nil
 }
