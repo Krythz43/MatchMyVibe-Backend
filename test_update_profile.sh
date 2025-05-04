@@ -11,7 +11,7 @@ curl -X PUT http://localhost:8080/api/profile \
     "name": "Test User",
     "birthdayInUnix": 631152000,
     "gender": "Man",
-    "dating_preference": "Everyone"
+    "dating_preference": "Women"
   }'
 
 echo -e "\n\nGet the updated profile:"

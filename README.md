@@ -126,7 +126,7 @@ MatchMyVibe is a music-based dating app that matches users based on their music 
       "name": "John Doe",
       "birthdayInUnix": 631152000,
       "gender": "Man",  // Can be "Man", "Woman", or "Non-binary"
-      "dating_preference": "Everyone"  // Can be "Man", "Woman", or "Everyone"
+      "dating_preference": "Everyone"  // Can be "Men", "Women", or "Everyone"
     }
     ```
   - Response: Updated full user profile
@@ -148,7 +148,7 @@ MatchMyVibe is a music-based dating app that matches users based on their music 
 - Added new profile fields:
   - `birthdayInUnix`: User's birthday as Unix timestamp
   - `gender`: User's gender (Man, Woman, or Non-binary)
-  - `dating_preference`: User's dating preference (Man, Woman, or Everyone)
+  - `dating_preference`: User's dating preference (Men, Women, or Everyone)
 
 ## License
 

@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS users (
     currently_playing TEXT,
     unix_timestamp BIGINT,
     gender TEXT CHECK (gender IN ('Man', 'Woman', 'Non-binary')),
-    dating_preference TEXT CHECK (dating_preference IN ('Man', 'Woman', 'Everyone')),
+    dating_preference TEXT CHECK (dating_preference IN ('Men', 'Women', 'Everyone')),
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );

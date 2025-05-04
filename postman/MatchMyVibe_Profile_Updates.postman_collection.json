@@ -21,7 +21,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"name\": \"John Doe\",\n  \"birthdayInUnix\": 631152000,\n  \"gender\": \"Man\",\n  \"dating_preference\": \"Everyone\"\n}"
+          "raw": "{\n  \"name\": \"John Doe\",\n  \"birthdayInUnix\": 631152000,\n  \"gender\": \"Man\",\n  \"dating_preference\": \"Women\"\n}"
         },
         "url": {
           "raw": "{{base_url}}/api/profile",

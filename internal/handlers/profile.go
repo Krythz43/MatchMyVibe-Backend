@@ -118,7 +118,7 @@ func (h *ProfileHandler) UpdateProfile(c *gin.Context) {
 	}
 	if req.DatingPreference != nil {
 		// Validate dating preference
-		if *req.DatingPreference != "Man" && *req.DatingPreference != "Woman" && *req.DatingPreference != "Everyone" {
+		if *req.DatingPreference != "Men" && *req.DatingPreference != "Women" && *req.DatingPreference != "Everyone" {
 			fmt.Printf("[ERROR] UpdateProfile - Invalid dating preference value: %v\n", *req.DatingPreference)
 			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid dating preference value"})
 			return
