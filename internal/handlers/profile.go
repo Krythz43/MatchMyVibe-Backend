@@ -211,6 +211,18 @@ func (h *ProfileHandler) UpdateProfile(c *gin.Context) {
 	c.JSON(http.StatusOK, profile)
 }
 
+// UpdateCurrentlyPlayingRequest represents the request body for updating the user's currently playing track
+type UpdateCurrentlyPlayingRequest struct {
+	Track        string `json:"track"`
+	Artist       string `json:"artist"`
+	URI          string `json:"uri"`
+	Album        string `json:"album"`
+	AlbumURI     string `json:"album_uri"`
+	Duration     int    `json:"duration"`
+	ContextTitle string `json:"context_title"`
+	ContextURI   string `json:"context_uri"`
+}
+
 // UpdateCurrentlyPlaying updates the user's currently playing track
 func (h *ProfileHandler) UpdateCurrentlyPlaying(c *gin.Context) {
 	userID := middleware.GetUserID(c)
@@ -219,13 +231,57 @@ func (h *ProfileHandler) UpdateCurrentlyPlaying(c *gin.Context) {
 		return
 	}
 
-	// Get the user to check if the token is valid or needs refresh
+	// Get the user
 	user, err := h.DB.GetUserByID(userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error retrieving user"})
 		return
 	}
 
+	// Parse the request body
+	var req UpdateCurrentlyPlayingRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		// If no JSON is provided, fall back to the old behavior of fetching from Spotify
+		handleSpotifyCurrentlyPlaying(c, h, user)
+		return
+	}
+
+	// Create formatted currently playing string
+	currentlyPlaying := fmt.Sprintf("%s - %s", req.Track, req.Artist)
+	user.CurrentlyPlaying = &currentlyPlaying
+
+	// Create last played song object
+	lastPlayedSong := &models.LastPlayedSong{
+		Track:        req.Track,
+		Artist:       req.Artist,
+		URI:          req.URI,
+		Album:        req.Album,
+		AlbumURI:     req.AlbumURI,
+		Duration:     req.Duration,
+		ContextTitle: req.ContextTitle,
+		ContextURI:   req.ContextURI,
+	}
+	user.LastPlayedSong = lastPlayedSong
+
+	// Update user's last active timestamp
+	now := time.Now().Unix()
+	user.UserLastActiveAt = &now
+
+	// Update the user in the database
+	if err := h.DB.UpdateUser(user); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error updating user"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"currently_playing":   currentlyPlaying,
+		"last_played_song":    lastPlayedSong,
+		"user_last_active_at": now,
+	})
+}
+
+// handleSpotifyCurrentlyPlaying is the legacy function to fetch currently playing from Spotify
+func handleSpotifyCurrentlyPlaying(c *gin.Context, h *ProfileHandler, user *models.User) {
 	// Check if the access token needs to be refreshed
 	if time.Now().After(user.TokenExpiry) {
 		// Refresh the token
@@ -258,10 +314,18 @@ func (h *ProfileHandler) UpdateCurrentlyPlaying(c *gin.Context) {
 
 	// Update the user's currently playing track in the database
 	user.CurrentlyPlaying = &currentlyPlaying
+
+	// Update user's last active timestamp
+	now := time.Now().Unix()
+	user.UserLastActiveAt = &now
+
 	if err := h.DB.UpdateUser(user); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error updating currently playing track"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"currently_playing": currentlyPlaying})
+	c.JSON(http.StatusOK, gin.H{
+		"currently_playing":   currentlyPlaying,
+		"user_last_active_at": now,
+	})
 }

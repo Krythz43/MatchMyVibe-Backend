@@ -34,16 +34,19 @@ func New(connStr string) (*DB, error) {
 func (db *DB) GetUserByID(userID uuid.UUID) (*models.User, error) {
 	var user models.User
 	var workJSON []byte
+	var lastPlayedSongJSON []byte
 
 	query := `SELECT id, spotify_uri, access_token, refresh_token, token_expiry, 
 			 name, university_name, work, home_town, height, age, zodiac, 
-			 currently_playing, "birthdayInUnix", gender, dating_preference, created_at, updated_at 
+			 currently_playing, "birthdayInUnix", gender, dating_preference, 
+			 last_played_song, user_last_active_at, created_at, updated_at 
 			 FROM users WHERE id = $1`
 
 	err := db.QueryRow(query, userID).Scan(
 		&user.ID, &user.SpotifyURI, &user.AccessToken, &user.RefreshToken, &user.TokenExpiry,
 		&user.Name, &user.UniversityName, &workJSON, &user.HomeTown, &user.Height, &user.Age, &user.Zodiac,
-		&user.CurrentlyPlaying, &user.BirthdayInUnix, &user.Gender, &user.DatingPreference, &user.CreatedAt, &user.UpdatedAt,
+		&user.CurrentlyPlaying, &user.BirthdayInUnix, &user.Gender, &user.DatingPreference,
+		&lastPlayedSongJSON, &user.UserLastActiveAt, &user.CreatedAt, &user.UpdatedAt,
 	)
 
 	if err != nil {
@@ -62,6 +65,15 @@ func (db *DB) GetUserByID(userID uuid.UUID) (*models.User, error) {
 		user.Work = &work
 	}
 
+	// Parse last played song JSON if it exists
+	if len(lastPlayedSongJSON) > 0 {
+		var lastPlayedSong models.LastPlayedSong
+		if err := json.Unmarshal(lastPlayedSongJSON, &lastPlayedSong); err != nil {
+			return nil, err
+		}
+		user.LastPlayedSong = &lastPlayedSong
+	}
+
 	return &user, nil
 }
 
@@ -69,10 +81,12 @@ func (db *DB) GetUserByID(userID uuid.UUID) (*models.User, error) {
 func (db *DB) GetUserBySpotifyURI(spotifyURI string) (*models.User, error) {
 	var user models.User
 	var workJSON []byte
+	var lastPlayedSongJSON []byte
 
 	query := `SELECT id, spotify_uri, access_token, refresh_token, token_expiry, 
 			 name, university_name, work, home_town, height, age, zodiac, 
-			 currently_playing, "birthdayInUnix", gender, dating_preference, created_at, updated_at 
+			 currently_playing, "birthdayInUnix", gender, dating_preference,
+			 last_played_song, user_last_active_at, created_at, updated_at 
 			 FROM users WHERE spotify_uri = $1`
 
 	fmt.Println("[DEBUG] Query:", query)
@@ -81,7 +95,8 @@ func (db *DB) GetUserBySpotifyURI(spotifyURI string) (*models.User, error) {
 	err := db.QueryRow(query, spotifyURI).Scan(
 		&user.ID, &user.SpotifyURI, &user.AccessToken, &user.RefreshToken, &user.TokenExpiry,
 		&user.Name, &user.UniversityName, &workJSON, &user.HomeTown, &user.Height, &user.Age, &user.Zodiac,
-		&user.CurrentlyPlaying, &user.BirthdayInUnix, &user.Gender, &user.DatingPreference, &user.CreatedAt, &user.UpdatedAt,
+		&user.CurrentlyPlaying, &user.BirthdayInUnix, &user.Gender, &user.DatingPreference,
+		&lastPlayedSongJSON, &user.UserLastActiveAt, &user.CreatedAt, &user.UpdatedAt,
 	)
 
 	if err != nil {
@@ -99,6 +114,15 @@ func (db *DB) GetUserBySpotifyURI(spotifyURI string) (*models.User, error) {
 			return nil, err
 		}
 		user.Work = &work
+	}
+
+	// Parse last played song JSON if it exists
+	if len(lastPlayedSongJSON) > 0 {
+		var lastPlayedSong models.LastPlayedSong
+		if err := json.Unmarshal(lastPlayedSongJSON, &lastPlayedSong); err != nil {
+			return nil, err
+		}
+		user.LastPlayedSong = &lastPlayedSong
 	}
 
 	return &user, nil
@@ -137,11 +161,20 @@ func (db *DB) UpdateUser(user *models.User) error {
 		return err
 	}
 
+	var lastPlayedSongJSON []byte
+	if user.LastPlayedSong != nil {
+		lastPlayedSongJSON, err = json.Marshal(user.LastPlayedSong)
+		if err != nil {
+			fmt.Printf("[ERROR] UpdateUser - Error marshaling last played song JSON: %v\n", err)
+			return err
+		}
+	}
+
 	query := `UPDATE users SET 
 			 name = $1, university_name = $2, work = $3, home_town = $4, 
 			 height = $5, zodiac = $6, currently_playing = $7, "birthdayInUnix" = $8,
-			 gender = $9, dating_preference = $10, updated_at = NOW() 
-			 WHERE id = $11`
+			 gender = $9, dating_preference = $10, last_played_song = $11, user_last_active_at = $12, updated_at = NOW() 
+			 WHERE id = $13`
 
 	fmt.Printf("[DEBUG] UpdateUser - Executing query: %s\n", query)
 	fmt.Printf("[DEBUG] UpdateUser - Query params: name=%v, birthdayInUnix=%v, gender=%v, dating_preference=%v\n",
@@ -150,7 +183,7 @@ func (db *DB) UpdateUser(user *models.User) error {
 	result, err := db.Exec(query,
 		user.Name, user.UniversityName, workJSON, user.HomeTown,
 		user.Height, user.Zodiac, user.CurrentlyPlaying, user.BirthdayInUnix,
-		user.Gender, user.DatingPreference, user.ID,
+		user.Gender, user.DatingPreference, lastPlayedSongJSON, user.UserLastActiveAt, user.ID,
 	)
 
 	if err != nil {
@@ -431,6 +464,8 @@ func (db *DB) GetFullUserProfile(userID uuid.UUID) (*models.UserProfile, error) 
 		Age:              user.Age,
 		Zodiac:           user.Zodiac,
 		CurrentlyPlaying: user.CurrentlyPlaying,
+		LastPlayedSong:   user.LastPlayedSong,
+		UserLastActiveAt: user.UserLastActiveAt,
 		BirthdayInUnix:   user.BirthdayInUnix,
 		Gender:           user.Gender,
 		DatingPreference: user.DatingPreference,

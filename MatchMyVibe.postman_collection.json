@@ -121,6 +121,33 @@
             "description": "Update the user's currently playing track information from Spotify."
           },
           "response": []
+        },
+        {
+          "name": "Update Last Played Song",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"track\": \"Midnight Rain\",\n  \"artist\": \"Taylor Swift\",\n  \"uri\": \"spotify:track:4eKMqf9ZMSclDX7V9Ptg7x\",\n  \"album\": \"Midnights (The Til Dawn Edition)\",\n  \"album_uri\": \"spotify:album:1fnJ7k0bllNfL1kVdNVW1A\",\n  \"duration\": 174782,\n  \"context_title\": \"Midnights (The Til Dawn Edition)\",\n  \"context_uri\": \"spotify:album:1fnJ7k0bllNfL1kVdNVW1A\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/profile/currently-playing",
+              "host": ["{{base_url}}"],
+              "path": ["api", "profile", "currently-playing"]
+            },
+            "description": "Update the user's last played song with detailed information. Also updates userLastActiveAt timestamp."
+          },
+          "response": []
         }
       ]
     }

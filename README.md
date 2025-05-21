@@ -9,6 +9,7 @@ MatchMyVibe is a music-based dating app that matches users based on their music 
 - User profile management
 - Storing and retrieving user's music preferences from Spotify
 - Real-time "currently playing" track updates
+- Detailed last played song information with user activity tracking
 - Dating profile with gender and preferences
 
 ## Tech Stack
@@ -65,7 +66,12 @@ MatchMyVibe is a music-based dating app that matches users based on their music 
    psql -U postgres -d matchmyvibe -f internal/db/schema.sql
    ```
 
-5. Build and run the application:
+5. Apply the migrations:
+   ```
+   psql -U postgres -d matchmyvibe -f internal/db/migrations/add_last_played_song.sql
+   ```
+
+6. Build and run the application:
    ```
    go build -o matchmyvibe-backend ./cmd/api
    ./matchmyvibe-backend
@@ -113,7 +119,7 @@ MatchMyVibe is a music-based dating app that matches users based on their music 
     ```
     Authorization: Bearer <token>
     ```
-  - Response: Full user profile including dating preferences
+  - Response: Full user profile including dating preferences, last played song and activity timestamp
 
 - `PUT /api/profile` - Update the user's profile
   - Headers:
@@ -136,15 +142,43 @@ MatchMyVibe is a music-based dating app that matches users based on their music 
     ```
     Authorization: Bearer <token>
     ```
+  - Can be called in two ways:
+    1. Without a request body (legacy): Fetches the currently playing track from Spotify
+    2. With a request body: Updates with detailed last played song information
+       ```json
+       {
+         "track": "Midnight Rain",
+         "artist": "Taylor Swift",
+         "uri": "spotify:track:4eKMqf9ZMSclDX7V9Ptg7x",
+         "album": "Midnights (The Til Dawn Edition)",
+         "album_uri": "spotify:album:1fnJ7k0bllNfL1kVdNVW1A",
+         "duration": 174782,
+         "context_title": "Midnights (The Til Dawn Edition)",
+         "context_uri": "spotify:album:1fnJ7k0bllNfL1kVdNVW1A"
+       }
+       ```
   - Response:
     ```json
     {
-      "currently_playing": "Track Name - Artist Name"
+      "currently_playing": "Midnight Rain - Taylor Swift",
+      "last_played_song": {
+        "track": "Midnight Rain",
+        "artist": "Taylor Swift",
+        "uri": "spotify:track:4eKMqf9ZMSclDX7V9Ptg7x",
+        "album": "Midnights (The Til Dawn Edition)",
+        "album_uri": "spotify:album:1fnJ7k0bllNfL1kVdNVW1A",
+        "duration": 174782,
+        "context_title": "Midnights (The Til Dawn Edition)",
+        "context_uri": "spotify:album:1fnJ7k0bllNfL1kVdNVW1A"
+      },
+      "user_last_active_at": 1693245678
     }
     ```
 
 ## Recent Updates
 
+- Added last played song functionality with detailed track information
+- Added userLastActiveAt timestamp to track when a user last played a song (as UNIX timestamp)
 - Added new profile fields:
   - `birthdayInUnix`: User's birthday as Unix timestamp
   - `gender`: User's gender (Man, Woman, or Non-binary)
